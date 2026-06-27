@@ -1,6 +1,7 @@
 """
 Script d'initialisation de la base de données TriBet.
 Paris entre amis sur le Triathlon L d'Embrun 2026 — dimanche 28 juin 2026, 7h30.
+Format L (70.3) : 1,9 km natation · 90 km vélo (tour du lac de Serre-Ponçon) · 21,1 km CAP.
 Usage : python init_db.py
 """
 from app import app
@@ -35,36 +36,37 @@ WINNER_ODDS = [
     ("Montabord Joffrey",  "🇫🇷", 10.00),
 ]
 
-# Plages de temps pour les marchés discipline
+# Plages de temps pour les marchés discipline — Format L (70.3)
 NATATION_TRANCHES = [
-    ("Sous 1h00",       "", 4.00),
-    ("1h00 – 1h15",     "", 2.00),
-    ("1h15 – 1h30",     "", 2.50),
-    ("Plus de 1h30",    "", 4.50),
+    ("Sous 28 min",         "", 6.00),   # très rapide
+    ("28 min – 35 min",     "", 2.00),   # bon nageur
+    ("35 min – 45 min",     "", 1.80),   # niveau moyen
+    ("45 min – 58 min",     "", 2.50),   # plus lent
+    ("Plus de 58 min",      "", 5.00),   # lent
 ]
 
 VELO_TRANCHES = [
-    ("Sous 5h30",       "", 5.00),
-    ("5h30 – 6h00",     "", 2.20),
-    ("6h00 – 6h45",     "", 1.80),
-    ("6h45 – 7h30",     "", 2.50),
-    ("Plus de 7h30",    "", 5.00),
+    ("Sous 2h30",           "", 5.00),   # très rapide
+    ("2h30 – 2h55",         "", 2.20),   # bon
+    ("2h55 – 3h25",         "", 1.80),   # moyen
+    ("3h25 – 4h00",         "", 2.50),   # plus lent
+    ("Plus de 4h00",        "", 5.00),   # lent
 ]
 
 CAP_TRANCHES = [
-    ("Sous 3h15",       "", 5.50),
-    ("3h15 – 3h45",     "", 2.00),
-    ("3h45 – 4h15",     "", 1.80),
-    ("4h15 – 5h00",     "", 2.50),
-    ("Plus de 5h00",    "", 4.00),
+    ("Sous 1h35",           "", 6.00),   # très rapide
+    ("1h35 – 1h52",         "", 2.00),   # bon
+    ("1h52 – 2h12",         "", 1.80),   # moyen
+    ("2h12 – 2h40",         "", 2.50),   # plus lent
+    ("Plus de 2h40",        "", 4.50),   # lent
 ]
 
 TOTAL_TRANCHES = [
-    ("Sous 10h30",      "", 6.00),
-    ("10h30 – 11h30",   "", 2.50),
-    ("11h30 – 12h30",   "", 1.90),
-    ("12h30 – 14h00",   "", 2.00),
-    ("Plus de 14h00",   "", 3.00),
+    ("Sous 4h50",           "", 6.00),   # très rapide
+    ("4h50 – 5h30",         "", 2.50),   # bon
+    ("5h30 – 6h15",         "", 1.90),   # moyen
+    ("6h15 – 7h30",         "", 2.00),   # plus lent
+    ("Plus de 7h30",        "", 3.00),   # lent
 ]
 
 ABANDON_TRANCHES = [
@@ -140,8 +142,8 @@ def create_event():
     event = Event(
         name="Triathlon L d'Embrun 2026",
         description=(
-            "Le Triathlon L d'Embrun — 3,8 km natation dans le lac de Serre-Ponçon, "
-            "188 km vélo avec les cols de Vars et d'Izoard, 42,2 km course à pied. "
+            "Le Triathlon L d'Embrun 2026 — 1,9 km natation dans le lac de Serre-Ponçon, "
+            "90 km vélo (tour du lac de Serre-Ponçon), 21,1 km course à pied (semi-marathon). "
             "Pariez sur lequel de nos amis terminera en tête !"
         ),
         location="Embrun, Hautes-Alpes, France",
@@ -160,19 +162,19 @@ def create_event():
     # 2. Meilleur temps natation
     add_market(event.id,
         "Meilleure natation du groupe",
-        "Qui réalisera le meilleur temps de natation parmi nous ? (3,8 km)",
+        "Qui réalisera le meilleur temps de natation parmi nous ? (1,9 km dans le lac de Serre-Ponçon)",
         'winner_swim', PARTICIPANTS)
 
     # 3. Meilleur temps vélo
     add_market(event.id,
         "Meilleur vélo du groupe",
-        "Qui réalisera le meilleur temps de vélo parmi nous ? (188 km, Vars + Izoard)",
+        "Qui réalisera le meilleur temps de vélo parmi nous ? (90 km, tour du lac de Serre-Ponçon)",
         'winner_bike', PARTICIPANTS)
 
     # 4. Meilleure course à pied
     add_market(event.id,
         "Meilleure course à pied du groupe",
-        "Qui réalisera le meilleur marathon parmi nous ? (42,2 km)",
+        "Qui réalisera le meilleur semi-marathon parmi nous ? (21,1 km)",
         'winner_run', PARTICIPANTS)
 
     # 5. Temps total du meilleur (tranche)
@@ -246,11 +248,11 @@ def create_event():
         "Qui de Florian ou Eric Ghio terminera le mieux classé ?",
         'duel', PREMIER_GHIO)
 
-    # 16. Qui finit sous 12h ?
+    # 16. Qui finit sous 6h ?
     add_market(event.id,
-        "Premier du groupe à finir sous 12h",
-        "Pariez sur le premier participant de notre groupe dont le temps total sera sous 12h. "
-        "Si personne ne passe sous les 12h, les paris sont remboursés.",
+        "Premier du groupe à finir sous 6h",
+        "Pariez sur le premier participant de notre groupe dont le temps total sera sous 6h. "
+        "Si personne ne passe sous les 6h, les paris sont remboursés.",
         'winner', FINIR_SOUS_12H)
 
     # 17. Meilleur nageur du groupe (pas rangé par classement général mais par split)
@@ -274,10 +276,10 @@ def create_event():
         "Écart entre le 1er et le dernier du groupe",
         "Quel sera l'écart de temps entre le premier et le dernier finisher de notre groupe ?",
         'special',
-        [("Moins de 1h d'écart",        "", 5.00),
+        [("Moins de 30 min d'écart",     "", 5.00),
+         ("30 min – 1h d'écart",        "", 2.00),
          ("1h – 2h d'écart",            "", 2.00),
-         ("2h – 3h d'écart",            "", 2.50),
-         ("Plus de 3h d'écart",         "", 3.50)])
+         ("Plus de 2h d'écart",         "", 3.50)])
 
     # 20. Le coup de cœur (pari surprise)
     add_market(event.id,
