@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}TriBet – Paris sportifs entre amis{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center gy-4">
+      <div class="col-lg-7">
+        <div class="hero-kicker">
+          <i class="fa-solid fa-circle-dot fa-xs"></i> Paris ouverts
+        </div>
+        <h1 class="hero-title mb-3">
+          <span class="accent">TriBet</span><br>
+          Paris sportifs<br>
+          <span style="font-weight:500;color:var(--text-muted)">entre amis</span>
+        </h1>
+        <p style="color:var(--text-muted);max-width:460px;line-height:1.75;margin-bottom:28px">
+          Créez un compte, recevez <strong style="color:var(--primary)">500 points</strong> offerts
+          et pariez sur vos épreuves sportives favorites.
+          Aucun argent réel — que de la compétition et du fun entre amis.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{{ url_for('events') }}"
+             style="display:inline-flex;align-items:center;gap:8px;background:#e6a817;color:#000;font-weight:700;border-radius:6px;padding:11px 22px;font-size:0.93rem;text-decoration:none;border:none;cursor:pointer">
+            <i class="fa-solid fa-arrow-right"></i> Voir les paris
+          </a>
+          {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('register') }}"
+             style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:#e2e8f0;font-weight:600;border-radius:6px;padding:11px 22px;font-size:0.93rem;text-decoration:none;border:1px solid #2c3440;cursor:pointer">
+            <i class="fa-solid fa-user-plus"></i> Créer un compte
+          </a>
+          {% else %}
+          <a href="{{ url_for('my_bets') }}"
+             style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:#e2e8f0;font-weight:600;border-radius:6px;padding:11px 22px;font-size:0.93rem;text-decoration:none;border:1px solid #2c3440;cursor:pointer">
+            Mes paris
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block">
+        <div style="display:grid;gap:10px">
+          <div class="feature-tile">
+            <div class="feature-icon"><i class="fa-solid fa-gift"></i></div>
+            <div>
+              <div class="fw-semibold" style="font-size:0.9rem">500 points offerts</div>
+              <div class="text-muted small">À l'inscription, sans condition</div>
+            </div>
+          </div>
+          <div class="feature-tile">
+            <div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div>
+              <div class="fw-semibold" style="font-size:0.9rem">Cotes dynamiques</div>
+              <div class="text-muted small">Évoluent selon le volume de mises</div>
+            </div>
+          </div>
+          <div class="feature-tile">
+            <div class="feature-icon"><i class="fa-solid fa-trophy"></i></div>
+            <div>
+              <div class="fw-semibold" style="font-size:0.9rem">Classement général</div>
+              <div class="text-muted small">Affrontez vos amis en direct</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contenu principal -->
+<div class="container mt-5">
+  <div class="row g-4">
+
+    <!-- Top parieurs -->
+    <div class="col-lg-6">
+      <div class="section-header">
+        <h2 class="h5 mb-0">Top parieurs</h2>
+        <a href="{{ url_for('leaderboard') }}" class="ms-auto text-muted small"
+           style="font-size:0.8rem">Voir tout <i class="fa-solid fa-arrow-right ms-1"></i></a>
+      </div>
+      <div class="card-dark overflow-hidden">
+        <table class="table-dark-custom mb-0">
+          <thead>
+            <tr>
+              <th style="width:48px">#</th>
+              <th>Joueur</th>
+              <th class="text-end">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in top_users if not u.is_admin %}
+            <tr {% if current_user.is_authenticated and u.id == current_user.id %}style="background:rgba(230,168,23,0.04)!important"{% endif %}>
+              <td class="text-center">
+                {% if loop.index == 1 %}<span class="rank-badge rank-1">1</span>
+                {% elif loop.index == 2 %}<span class="rank-badge rank-2">2</span>
+                {% elif loop.index == 3 %}<span class="rank-badge rank-3">3</span>
+                {% else %}<span class="text-muted small">{{ loop.index }}</span>{% endif %}
+              </td>
+              <td>
+                <span class="fw-semibold">{{ u.username }}</span>
+                {% if current_user.is_authenticated and u.id == current_user.id %}
+                <span class="badge ms-2" style="background:rgba(230,168,23,0.12);color:var(--primary);font-size:0.62rem">VOUS</span>
+                {% endif %}
+              </td>
+              <td class="text-end fw-bold" style="color:var(--primary)">{{ '%.0f'|format(u.balance) }} pts</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-4" style="font-size:0.87rem">Aucun parieur pour l'instant.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Comment ça marche -->
+    <div class="col-lg-6">
+      <div class="section-header">
+        <h2 class="h5 mb-0">Comment ça marche ?</h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="feature-tile">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.2);color:#60a5fa">
+            <span style="font-weight:900;font-size:0.85rem">1</span>
+          </div>
+          <div>
+            <div class="fw-semibold" style="font-size:0.88rem">Inscrivez-vous</div>
+            <p class="text-muted mb-0 small">Créez un compte et recevez 500 points virtuels pour commencer à parier.</p>
+          </div>
+        </div>
+        <div class="feature-tile">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.2);color:#60a5fa">
+            <span style="font-weight:900;font-size:0.85rem">2</span>
+          </div>
+          <div>
+            <div class="fw-semibold" style="font-size:0.88rem">Choisissez vos paris</div>
+            <p class="text-muted mb-0 small">Parcourez les marchés, sélectionnez vos cotes et misez vos points.</p>
+          </div>
+        </div>
+        <div class="feature-tile">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.2);color:#60a5fa">
+            <span style="font-weight:900;font-size:0.85rem">3</span>
+          </div>
+          <div>
+            <div class="fw-semibold" style="font-size:0.88rem">Encaissez vos gains</div>
+            <p class="text-muted mb-0 small">Après l'épreuve, les paris gagnants sont crédités automatiquement.</p>
+          </div>
+        </div>
+      </div>
+
+      {% if not current_user.is_authenticated %}
+      <div class="mt-4 text-center">
+        <a href="{{ url_for('register') }}" class="btn-primary-tribet">
+          <i class="fa-solid fa-user-plus me-2"></i>Créer un compte – 500 pts offerts
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Résultats récents si présents -->
+  {% if finished %}
+  <div class="mt-5">
+    <div class="section-header">
+      <h2 class="h5 mb-0">Résultats récents</h2>
+    </div>
+    <div class="row g-3">
+      {% for event in finished %}
+      <div class="col-md-4">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('event_detail', event_id=event.id) }}" class="text-decoration-none">
+        {% endif %}
+        <div class="card-dark p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="badge badge-finished mb-2">Terminé</span>
+              <div class="fw-semibold" style="font-size:0.9rem">{{ event.name }}</div>
+              <div class="text-muted small mt-1">{{ event.race_date|date_fr('court') }}</div>
+            </div>
+            {% if current_user.is_authenticated %}
+            <i class="fa-solid fa-chevron-right text-muted fa-sm"></i>
+            {% else %}
+            <i class="fa-solid fa-lock text-muted fa-sm"></i>
+            {% endif %}
+          </div>
+        </div>
+        {% if current_user.is_authenticated %}</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

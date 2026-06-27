@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Classement – TriBet{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="section-header">
+    <h1 class="h4 mb-0">Classement</h1>
+  </div>
+
+  {% if users %}
+
+  <!-- Podium top 3 -->
+  {% if users|length >= 3 %}
+  <div class="row g-3 mb-5 justify-content-center">
+    <div class="col-md-3 mt-3">
+      <div class="podium-card silver">
+        <div class="rank-badge rank-2 mx-auto mb-3" style="width:40px;height:40px;font-size:1rem">2</div>
+        <div class="fw-bold">{{ users[1].username }}</div>
+        <div class="text-muted small mt-1">{{ users[1].bets|length }} paris</div>
+        <div class="h5 mt-2 mb-0" style="color:var(--text)">{{ '%.0f'|format(users[1].balance) }} pts</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="podium-card gold">
+        <div class="rank-badge rank-1 mx-auto mb-3" style="width:44px;height:44px;font-size:1.1rem">1</div>
+        <div class="fw-bold h6">{{ users[0].username }}</div>
+        <div class="text-muted small mt-1">{{ users[0].bets|length }} paris</div>
+        <div class="h4 mt-2 mb-0" style="color:var(--primary)">{{ '%.0f'|format(users[0].balance) }} pts</div>
+        {% if current_user.is_authenticated and users[0].id == current_user.id %}
+        <span class="badge mt-2" style="background:rgba(230,168,23,0.15);color:var(--primary)">C'est vous</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-3 mt-3">
+      <div class="podium-card bronze">
+        <div class="rank-badge rank-3 mx-auto mb-3" style="width:40px;height:40px;font-size:1rem">3</div>
+        <div class="fw-bold">{{ users[2].username }}</div>
+        <div class="text-muted small mt-1">{{ users[2].bets|length }} paris</div>
+        <div class="h5 mt-2 mb-0" style="color:var(--text)">{{ '%.0f'|format(users[2].balance) }} pts</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tableau complet -->
+  <div class="card-dark overflow-hidden">
+    <table class="table-dark-custom mb-0">
+      <thead>
+        <tr>
+          <th style="width:52px">#</th>
+          <th>Joueur</th>
+          <th class="text-end">Paris</th>
+          <th class="text-end d-none d-md-table-cell">Misé</th>
+          <th class="text-end d-none d-md-table-cell">Gagnés</th>
+          <th class="text-end">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr {% if current_user.is_authenticated and u.id == current_user.id %}style="background:rgba(230,168,23,0.04)!important"{% endif %}>
+          <td class="text-center">
+            {% if loop.index == 1 %}<span class="rank-badge rank-1">1</span>
+            {% elif loop.index == 2 %}<span class="rank-badge rank-2">2</span>
+            {% elif loop.index == 3 %}<span class="rank-badge rank-3">3</span>
+            {% else %}<span class="text-muted small">{{ loop.index }}</span>{% endif %}
+          </td>
+          <td>
+            <span class="fw-semibold">{{ u.username }}</span>
+            {% if current_user.is_authenticated and u.id == current_user.id %}
+            <span class="badge ms-2" style="background:rgba(230,168,23,0.12);color:var(--primary);font-size:0.6rem">VOUS</span>
+            {% endif %}
+            <div class="text-muted" style="font-size:0.72rem">Depuis {{ u.created_at.strftime('%m/%Y') }}</div>
+          </td>
+          <td class="text-end text-muted">{{ u.bets|length }}</td>
+          <td class="text-end text-muted d-none d-md-table-cell">{{ '%.0f'|format(u.total_wagered) }} pts</td>
+          <td class="text-end d-none d-md-table-cell" style="color:var(--green)">{{ '%.0f'|format(u.total_won) }} pts</td>
+          <td class="text-end fw-bold" style="color:var(--primary)">{{ '%.0f'|format(u.balance) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if not current_user.is_authenticated %}
+  <div class="text-center mt-5">
+    <p class="text-muted mb-3">Rejoignez TriBet et grimpez dans le classement !</p>
+    <a href="{{ url_for('register') }}" class="btn-primary-tribet">
+      <i class="fa-solid fa-user-plus me-2"></i>Créer un compte – 500 pts offerts
+    </a>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="card-dark p-5 text-center text-muted">
+    <p class="mb-3">Aucun parieur inscrit pour l'instant.</p>
+    <a href="{{ url_for('register') }}" class="btn-primary-tribet">S'inscrire</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

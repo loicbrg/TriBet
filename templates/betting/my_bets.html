@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Mes paris – TriBet{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="section-header">
+    <h1 class="h4 mb-0">Mes paris</h1>
+  </div>
+
+  {% set pending = bets|selectattr('status','equalto','pending')|list %}
+  {% set won     = bets|selectattr('status','equalto','won')|list %}
+  {% set lost    = bets|selectattr('status','equalto','lost')|list %}
+  {% set wagered = bets|selectattr('status','ne','cancelled')|sum(attribute='amount') %}
+  {% set earned  = won|sum(attribute='potential_win') %}
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card-dark p-3 text-center">
+        <div class="nav-balance d-inline-block mb-2">{{ '%.0f'|format(current_user.balance) }} pts</div>
+        <div class="text-muted small">Solde actuel</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-dark p-3 text-center">
+        <div style="font-size:1.6rem;font-weight:900;color:var(--primary)">{{ bets|length }}</div>
+        <div class="text-muted small">Total paris</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-dark p-3 text-center">
+        <div style="font-size:1.6rem;font-weight:900;color:var(--green)">{{ won|length }}</div>
+        <div class="text-muted small">Gagnés</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-dark p-3 text-center">
+        <div style="font-size:1.6rem;font-weight:900;color:var(--red)">{{ lost|length }}</div>
+        <div class="text-muted small">Perdus</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="d-flex gap-2 mb-4 flex-wrap">
+    {% for s, label, count in [
+      ('all','Tous',bets|length),
+      ('pending','En attente',pending|length),
+      ('won','Gagnés',won|length),
+      ('lost','Perdus',lost|length)
+    ] %}
+    <a href="{{ url_for('my_bets', status=s) }}"
+       class="btn btn-sm {{ 'btn-warning text-dark' if status_filter==s else 'btn-outline-secondary' }}"
+       style="font-size:0.78rem">{{ label }} ({{ count }})</a>
+    {% endfor %}
+  </div>
+
+  {% if bets %}
+  <div class="card-dark overflow-hidden">
+    <div class="table-responsive">
+      <table class="table-dark-custom mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Marché</th>
+            <th>Sélection</th>
+            <th class="text-end">Mise</th>
+            <th class="text-end">Cote</th>
+            <th class="text-end">Gain pot.</th>
+            <th class="text-center">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bet in bets %}
+          <tr>
+            <td class="text-muted" style="font-size:0.78rem;white-space:nowrap">
+              {{ bet.created_at.strftime('%d/%m %H:%M') }}
+            </td>
+            <td style="font-size:0.82rem">
+              <a href="{{ url_for('event_detail', event_id=bet.selection.market.event.id) }}"
+                 class="text-muted text-decoration-none">
+                {{ bet.selection.market.name|truncate(38) }}
+              </a>
+            </td>
+            <td class="fw-semibold" style="font-size:0.87rem">{{ bet.selection.name }}</td>
+            <td class="text-end fw-bold" style="color:var(--primary);white-space:nowrap">{{ '%.0f'|format(bet.amount) }} pts</td>
+            <td class="text-end text-muted" style="font-size:0.82rem">×{{ '%.2f'|format(bet.selection.odds) }}</td>
+            <td class="text-end fw-bold white-space-nowrap
+              {% if bet.status=='won' %}text-success
+              {% elif bet.status=='lost' %}text-danger
+              {% else %}{% endif %}"
+              style="{% if bet.status=='lost' %}text-decoration:line-through{% endif %}">
+              {{ '%.0f'|format(bet.potential_win) }} pts
+            </td>
+            <td class="text-center">
+              {% if bet.status == 'pending' %}
+                <span class="badge badge-upcoming">En attente</span>
+              {% elif bet.status == 'won' %}
+                <span class="badge bg-success">Gagné</span>
+              {% elif bet.status == 'lost' %}
+                <span class="badge bg-danger">Perdu</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ bet.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card-dark p-5 text-center text-muted">
+    <i class="fa-solid fa-ticket fa-2x mb-3 opacity-25"></i>
+    <p class="mb-3">Aucun pari dans cette catégorie.</p>
+    <a href="{{ url_for('events') }}" class="btn-primary-tribet">
+      <i class="fa-solid fa-arrow-right me-2"></i>Voir les paris disponibles
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

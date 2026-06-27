@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Connexion – TriBet{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card-dark p-4 p-md-5">
+        <div class="text-center mb-4">
+          <span style="font-size:3rem">🔐</span>
+          <h2 class="h3 mt-2">Connexion</h2>
+          <p class="text-muted">Accédez à vos paris TriBet</p>
+        </div>
+        <form method="POST" novalidate>
+          <div class="mb-3">
+            <label class="form-label text-muted small">Pseudo ou adresse e-mail</label>
+            <input type="text" name="identifier" class="form-control form-control-dark"
+                   placeholder="votre_pseudo ou email@exemple.fr" required autofocus>
+          </div>
+          <div class="mb-4">
+            <label class="form-label text-muted small">Mot de passe</label>
+            <div class="position-relative">
+              <input type="password" name="password" id="pwd-input"
+                     class="form-control form-control-dark" placeholder="••••••••" required>
+              <button type="button" onclick="togglePwd()"
+                      class="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 border-0 text-muted">
+                <i class="fa-solid fa-eye" id="pwd-icon"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="remember" id="remember">
+            <label class="form-check-label text-muted small" for="remember">Se souvenir de moi</label>
+          </div>
+          <button type="submit" class="btn btn-primary-tribet w-100 py-2">
+            <i class="fa-solid fa-right-to-bracket me-2"></i>Connexion
+          </button>
+        </form>
+        <hr class="my-4" style="border-color:var(--card-border)">
+        <div class="text-center text-muted small">
+          Pas encore de compte ?
+          <a href="{{ url_for('register') }}" class="text-warning text-decoration-none">
+            Inscrivez-vous – 500 pts offerts
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePwd() {
+  const input = document.getElementById('pwd-input');
+  const icon = document.getElementById('pwd-icon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-solid fa-eye';
+  }
+}
+</script>
+{% endblock %}

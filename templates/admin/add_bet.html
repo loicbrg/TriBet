@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Admin – Ajouter un pari{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:640px">
+  <div class="section-header mb-4">
+    <h1 class="h3 mb-0"><i class="fa-solid fa-plus me-2 text-warning"></i>Ajouter un pari manuellement</h1>
+    <a href="{{ url_for('admin_bets') }}" class="btn btn-outline-secondary btn-sm ms-auto">
+      <i class="fa-solid fa-arrow-left me-1"></i>Retour
+    </a>
+  </div>
+
+  <div class="card-dark p-4">
+    <form method="post">
+      <div class="mb-3">
+        <label class="text-muted small fw-bold mb-1">Utilisateur *</label>
+        <select name="user_id" required class="form-control-dark form-select">
+          <option value="">— Choisir un utilisateur —</option>
+          {% for u in users %}
+          <option value="{{ u.id }}">{{ u.username }} ({{ '%.0f'|format(u.balance) }} pts)</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-muted small fw-bold mb-1">Sélection *</label>
+        <select name="selection_id" required class="form-control-dark form-select">
+          <option value="">— Choisir une sélection —</option>
+          {% set current_market = namespace(id=None) %}
+          {% for sel in selections %}
+            {% if sel.market_id != current_market.id %}
+              {% set current_market.id = sel.market_id %}
+              <option disabled>── {{ sel.market.name }} ──</option>
+            {% endif %}
+            <option value="{{ sel.id }}">
+              {{ sel.flag or '' }} {{ sel.name }} (×{{ '%.2f'|format(sel.odds) }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-muted small fw-bold mb-1">Mise (pts) *</label>
+        <input type="number" name="amount" min="1" max="10000" step="0.01"
+               class="form-control-dark" placeholder="ex: 50" required>
+      </div>
+
+      <div class="mb-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="deduct_balance" id="deductCheck" checked>
+          <label class="form-check-label text-muted" for="deductCheck">
+            Déduire la mise du solde de l'utilisateur
+          </label>
+        </div>
+        <div class="text-muted mt-1" style="font-size:0.78rem">
+          <i class="fa-solid fa-circle-info me-1"></i>
+          Si décoché, le pari est ajouté sans toucher au solde (mise "offerte").
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary-tribet w-100">
+        <i class="fa-solid fa-plus me-2"></i>Enregistrer le pari
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

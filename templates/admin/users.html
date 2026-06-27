@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Utilisateurs – Admin TriBet{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="section-header">
+    <h1 class="h3 mb-0">
+      <i class="fa-solid fa-users text-warning me-2"></i>Gestion des utilisateurs
+    </h1>
+  </div>
+
+  <div class="card-dark overflow-hidden">
+    <table class="table-dark-custom mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Pseudo</th>
+          <th>Email</th>
+          <th>Inscription</th>
+          <th class="text-end">Paris</th>
+          <th class="text-end">Solde</th>
+          <th class="text-center">Rôle</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="text-muted">{{ u.id }}</td>
+          <td class="fw-semibold">{{ u.username }}</td>
+          <td class="text-muted small">{{ u.email }}</td>
+          <td class="text-muted small">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+          <td class="text-end">{{ u.bets|length }}</td>
+          <td class="text-end text-warning fw-bold">{{ '%.0f'|format(u.balance) }} pts</td>
+          <td class="text-center">
+            {% if u.is_admin %}
+            <span class="badge bg-warning text-dark">Admin</span>
+            {% else %}
+            <span class="badge bg-secondary">Joueur</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if not u.is_admin %}
+            <button class="btn btn-sm btn-outline-warning"
+                    data-bs-toggle="modal" data-bs-target="#adjustModal{{ u.id }}">
+              <i class="fa-solid fa-coins me-1"></i>Ajuster
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modals d'ajustement -->
+{% for u in users if not u.is_admin %}
+<div class="modal fade" id="adjustModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--card-border)">
+      <div class="modal-header" style="border-color:var(--card-border)">
+        <h6 class="modal-title">Solde de {{ u.username }}</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('admin_adjust_balance', user_id=u.id) }}">
+        <div class="modal-body">
+          <p class="text-muted small">Solde actuel : <strong class="text-warning">{{ '%.0f'|format(u.balance) }} pts</strong></p>
+          <label class="form-label text-muted small">Ajustement (positif ou négatif)</label>
+          <input type="number" name="amount" step="1" class="form-control form-control-dark"
+                 placeholder="Ex: 100 ou -50" required>
+          <div class="form-text text-muted" style="font-size:0.75rem">Valeur ajoutée au solde actuel.</div>
+        </div>
+        <div class="modal-footer" style="border-color:var(--card-border)">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-sm btn-primary-tribet">Appliquer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

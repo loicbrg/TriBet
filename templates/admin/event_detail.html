@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Admin – {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}" class="text-warning">Admin</a></li>
+      <li class="breadcrumb-item active text-muted">{{ event.name|truncate(50) }}</li>
+    </ol>
+  </nav>
+
+  <!-- En-tête événement -->
+  <div class="card-dark p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="h3 mb-1">{{ event.name }}</h1>
+        <div class="text-muted small">
+          <i class="fa-solid fa-calendar me-1"></i>{{ event.race_date|date_fr('heure') }}
+          &nbsp;·&nbsp;
+          <i class="fa-solid fa-location-dot me-1"></i>{{ event.location or 'N/A' }}
+        </div>
+      </div>
+      <span class="badge
+        {% if event.status == 'live' %}badge-live
+        {% elif event.status == 'upcoming' %}badge-upcoming
+        {% elif event.status == 'finished' %}badge-finished
+        {% else %}bg-secondary{% endif %} px-3 py-2 fs-6">
+        {{ event.status|upper }}
+      </span>
+    </div>
+
+    <!-- Changement de statut -->
+    <div class="mt-3 pt-3" style="border-top:1px solid var(--card-border)">
+      <form method="POST" class="d-flex gap-2 align-items-center flex-wrap">
+        <input type="hidden" name="action" value="update_status">
+        <label class="text-muted small">Changer le statut :</label>
+        <select name="status" class="form-select form-select-sm form-control-dark" style="width:auto">
+          <option value="upcoming" {{ 'selected' if event.status == 'upcoming' }}>À venir</option>
+          <option value="live" {{ 'selected' if event.status == 'live' }}>Live</option>
+          <option value="finished" {{ 'selected' if event.status == 'finished' }}>Terminé</option>
+          <option value="cancelled" {{ 'selected' if event.status == 'cancelled' }}>Annulé</option>
+        </select>
+        <button type="submit" class="btn btn-sm btn-outline-warning">
+          <i class="fa-solid fa-check me-1"></i>Mettre à jour
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Marchés existants -->
+    <div class="col-lg-8">
+      <h2 class="h5 mb-3">
+        <i class="fa-solid fa-chart-bar me-2 text-warning"></i>Marchés ({{ event.markets|length }})
+      </h2>
+
+      {% for market in event.markets %}
+      <div class="card-dark mb-3 overflow-hidden">
+        <div class="p-3 d-flex justify-content-between align-items-start flex-wrap gap-2"
+             style="border-bottom:1px solid var(--card-border)">
+          <div>
+            <h3 class="h6 mb-1">{{ market.name }}</h3>
+            {% if market.description %}
+            <div class="text-muted small">{{ market.description }}</div>
+            {% endif %}
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge
+              {% if market.status == 'open' %}badge-open
+              {% elif market.status == 'suspended' %}badge-suspended
+              {% elif market.status == 'resolved' %}badge-resolved
+              {% else %}bg-secondary{% endif %}">
+              {{ market.status }}
+            </span>
+            {% if market.status != 'resolved' %}
+            <form method="POST" action="{{ url_for('admin_toggle_market', market_id=market.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-outline-secondary">
+                {% if market.status == 'open' %}
+                <i class="fa-solid fa-pause"></i> Suspendre
+                {% else %}
+                <i class="fa-solid fa-play"></i> Rouvrir
+                {% endif %}
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="p-3">
+          <!-- Sélections existantes -->
+          {% if market.selections %}
+          <div class="mb-3">
+            <div class="text-muted small mb-2">Sélections :</div>
+            <div class="row g-2">
+              {% for sel in market.selections|sort(attribute='odds') %}
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center p-2 rounded"
+                     style="background:#1c2128;border:1px solid {{ '#3fb950' if sel.is_winner else 'var(--card-border)' }}">
+                  <span class="small">
+                    {% if sel.flag %}{{ sel.flag }} {% endif %}{{ sel.name }}
+                    {% if sel.is_winner %}
+                    <span class="badge bg-success ms-1" style="font-size:0.6rem">Gagnant</span>
+                    {% endif %}
+                  </span>
+                  <div class="text-end">
+                    <div class="text-warning fw-bold">{{ '%.2f'|format(sel.odds) }}</div>
+                    <div class="text-muted" style="font-size:0.7rem">{{ sel.total_bets }} paris</div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <p class="text-muted small">Aucune sélection.</p>
+          {% endif %}
+
+          <!-- Actions du marché -->
+          <div class="d-flex gap-2 flex-wrap">
+            <!-- Résoudre -->
+            {% if market.status in ['open', 'suspended'] and market.selections %}
+            <button class="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal" data-bs-target="#resolveModal{{ market.id }}">
+              <i class="fa-solid fa-flag-checkered me-1"></i>Résoudre
+            </button>
+            {% endif %}
+            <!-- Ajouter sélection -->
+            {% if market.status != 'resolved' %}
+            <button class="btn btn-sm btn-outline-warning"
+                    data-bs-toggle="collapse" data-bs-target="#addSel{{ market.id }}">
+              <i class="fa-solid fa-plus me-1"></i>Ajouter sélection
+            </button>
+            {% endif %}
+          </div>
+
+          <!-- Form ajout sélection (collapse) -->
+          {% if market.status != 'resolved' %}
+          <div class="collapse mt-3" id="addSel{{ market.id }}">
+            <div class="p-3 rounded" style="background:#1c2128;border:1px solid var(--card-border)">
+              <h6 class="text-muted mb-3">Nouvelle sélection</h6>
+              <form method="POST" action="{{ url_for('admin_add_selection', market_id=market.id) }}">
+                <div class="row g-2">
+                  <div class="col-md-5">
+                    <input type="text" name="name" class="form-control form-control-dark form-control-sm"
+                           placeholder="Nom (ex: Jan Frodeno)" required>
+                  </div>
+                  <div class="col-md-2">
+                    <input type="text" name="flag" class="form-control form-control-dark form-control-sm"
+                           placeholder="🇩🇪">
+                  </div>
+                  <div class="col-md-2">
+                    <input type="number" name="odds" step="0.01" min="1.01"
+                           class="form-control form-control-dark form-control-sm"
+                           placeholder="Cote" required>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="text" name="description" class="form-control form-control-dark form-control-sm"
+                           placeholder="Description (optionnel)">
+                  </div>
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-sm btn-primary-tribet">
+                      <i class="fa-solid fa-plus me-1"></i>Ajouter
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Modal résolution -->
+      {% if market.status in ['open', 'suspended'] and market.selections %}
+      <div class="modal fade" id="resolveModal{{ market.id }}" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--card-border)">
+            <div class="modal-header" style="border-color:var(--card-border)">
+              <h5 class="modal-title">
+                <i class="fa-solid fa-flag-checkered me-2 text-warning"></i>Résoudre : {{ market.name }}
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_resolve_market', market_id=market.id) }}">
+              <div class="modal-body">
+                <p class="text-muted small">Sélectionnez la sélection gagnante. Les paris gagnants seront automatiquement crédités.</p>
+                {% for sel in market.selections %}
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="winner_id"
+                         id="winner{{ sel.id }}" value="{{ sel.id }}" required>
+                  <label class="form-check-label" for="winner{{ sel.id }}">
+                    {% if sel.flag %}{{ sel.flag }} {% endif %}
+                    <strong>{{ sel.name }}</strong>
+                    <span class="text-warning ms-2">× {{ '%.2f'|format(sel.odds) }}</span>
+                    <span class="text-muted ms-2 small">({{ sel.total_bets }} paris)</span>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="modal-footer" style="border-color:var(--card-border)">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('Confirmer la résolution ? Cette action est irréversible.')">
+                  <i class="fa-solid fa-check me-1"></i>Confirmer le résultat
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      {% if not event.markets %}
+      <div class="card-dark p-4 text-center text-muted">
+        Aucun marché. Utilisez le formulaire pour en ajouter.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Ajout de marché -->
+    <div class="col-lg-4">
+      <div class="card-dark p-4 position-sticky" style="top:80px">
+        <h2 class="h6 mb-3">
+          <i class="fa-solid fa-plus-circle me-2 text-warning"></i>Ajouter un marché
+        </h2>
+        <form method="POST">
+          <input type="hidden" name="action" value="add_market">
+          <div class="mb-3">
+            <label class="form-label text-muted small">Nom du marché</label>
+            <input type="text" name="market_name" class="form-control form-control-dark"
+                   placeholder="Ex: Vainqueur Hommes" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small">Description (optionnel)</label>
+            <textarea name="market_desc" class="form-control form-control-dark" rows="2"
+                      placeholder="Description du marché…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary-tribet w-100">
+            <i class="fa-solid fa-plus me-2"></i>Créer le marché
+          </button>
+        </form>
+
+        <hr style="border-color:var(--card-border)">
+        <div class="text-muted small">
+          <strong class="text-white">Résumé</strong>
+          <ul class="mt-2 ps-3">
+            <li>{{ event.markets|length }} marché(s)</li>
+            <li>{{ event.open_markets_count }} ouvert(s)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

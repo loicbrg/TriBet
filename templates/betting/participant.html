@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ participant_name }} – TriBet{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- En-tête -->
+  {% set parts = participant_name.split() %}
+  {% set initials = parts[0][0] ~ (parts[-1][0] if parts|length > 1 else '') %}
+  <div class="card-dark p-4 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="participant-avatar" style="width:56px;height:56px;font-size:1.25rem">{{ initials|upper }}</div>
+      <div>
+        <h1 class="h4 mb-1">{{ participant_name }}</h1>
+        <div class="text-muted" style="font-size:0.83rem">
+          <span class="me-3">
+            <i class="fa-solid fa-layer-group fa-xs me-1"></i>
+            {{ selections|length }} marché{{ 's' if selections|length > 1 }}
+          </span>
+          {% set total_mis = namespace(val=0) %}
+          {% for sel in selections %}{% set total_mis.val = total_mis.val + sel.total_staked %}{% endfor %}
+          {% if total_mis.val > 0 %}
+          <span>
+            <i class="fa-solid fa-star fa-xs me-1" style="color:var(--primary)"></i>
+            <strong style="color:var(--primary)">{{ '%.0f'|format(total_mis.val) }} pts</strong> misés
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="ms-auto d-none d-md-block">
+        <a href="{{ url_for('participants') }}" class="btn btn-sm btn-outline-secondary" style="font-size:0.8rem">
+          <i class="fa-solid fa-arrow-left me-1 fa-xs"></i>Retour
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marchés -->
+  <div class="mb-3 text-muted" style="font-size:0.82rem;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">
+    Marchés disponibles
+  </div>
+
+  {% for sel in selections %}
+  {% set market = sel.market %}
+  <div class="card-dark mb-3 overflow-hidden">
+    <div class="p-3 p-md-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <div class="text-muted mb-1" style="font-size:0.75rem">
+            <a href="{{ url_for('event_detail', event_id=market.event.id) }}"
+               class="text-muted text-decoration-none">{{ market.event.name }}</a>
+          </div>
+          <div class="fw-semibold" style="font-size:0.92rem">{{ market.name }}</div>
+          {% if market.description %}
+          <div class="text-muted mt-1" style="font-size:0.79rem">{{ market.description }}</div>
+          {% endif %}
+        </div>
+        <span class="badge
+          {% if market.status == 'open' %}badge-open
+          {% elif market.status == 'suspended' %}badge-suspended
+          {% elif market.status == 'resolved' %}badge-resolved
+          {% else %}badge-finished{% endif %}">
+          {% if market.status == 'open' %}Ouvert
+          {% elif market.status == 'suspended' %}Suspendu
+          {% elif market.status == 'resolved' %}Résolu
+          {% else %}{{ market.status }}{% endif %}
+        </span>
+      </div>
+
+      <div class="row g-3 align-items-center">
+        <div class="col-md-6">
+          <button class="odds-btn {% if market.status != 'open' %}disabled{% endif %}"
+                  data-selection-id="{{ sel.id }}"
+                  data-selection-name="{{ participant_name }}"
+                  data-market-name="{{ market.name }}"
+                  data-odds="{{ sel.odds }}"
+                  {% if market.status != 'open' %}disabled{% endif %}>
+            <div>
+              <div class="fw-semibold" style="font-size:0.87rem">{{ participant_name }}</div>
+              <div class="text-muted" style="font-size:0.73rem">{{ market.name }}</div>
+            </div>
+            <div class="text-end">
+              <div class="odds-value">{{ '%.2f'|format(sel.odds) }}</div>
+              {% if sel.odds != sel.base_odds %}
+              <div style="font-size:0.63rem;color:var(--text-muted)">
+                init. {{ '%.2f'|format(sel.base_odds) }}
+                {% if sel.odds < sel.base_odds %}<span style="color:var(--red)">↓</span>
+                {% else %}<span style="color:var(--green)">↑</span>{% endif %}
+              </div>
+              {% endif %}
+              {% if market.status == 'resolved' and sel.is_winner %}
+              <span class="badge bg-success mt-1" style="font-size:0.6rem">Gagnant</span>
+              {% endif %}
+            </div>
+          </button>
+        </div>
+
+        <div class="col-md-6">
+          <div class="d-flex gap-4">
+            <div>
+              <div class="fw-bold" style="color:var(--primary)">{{ sel.total_bets }}</div>
+              <div class="text-muted" style="font-size:0.72rem">paris</div>
+            </div>
+            <div>
+              <div class="fw-bold" style="color:var(--primary)">{{ '%.0f'|format(sel.total_staked) }}</div>
+              <div class="text-muted" style="font-size:0.72rem">pts misés</div>
+            </div>
+            {% if market.total_bets_amount > 0 %}
+            <div>
+              <div class="fw-bold" style="color:var(--primary)">{{ '%.0f'|format(sel.total_staked / market.total_bets_amount * 100) }}%</div>
+              <div class="text-muted" style="font-size:0.72rem">du pool</div>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if user_bets.get(sel.id) %}
+          <div class="mt-2 p-2 rounded" style="background:var(--surface-2);border:1px solid var(--border)">
+            <div class="text-muted mb-1" style="font-size:0.7rem;font-weight:700;letter-spacing:0.4px;text-transform:uppercase">Vos paris</div>
+            {% for bet in user_bets[sel.id] %}
+            <div class="d-flex justify-content-between align-items-center">
+              <span style="color:var(--primary);font-weight:600;font-size:0.83rem">{{ '%.0f'|format(bet.amount) }} pts</span>
+              <span class="text-muted mx-2" style="font-size:0.8rem">→</span>
+              <span style="color:var(--green);font-weight:600;font-size:0.83rem">{{ '%.0f'|format(bet.potential_win) }} pts</span>
+              <span class="badge ms-2
+                {% if bet.status=='won' %}bg-success
+                {% elif bet.status=='lost' %}bg-danger
+                {% else %}badge-upcoming{% endif %}" style="font-size:0.6rem">
+                {{ bet.status|upper }}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not current_user.is_authenticated %}
+  <div class="card-dark p-4 text-center mt-3">
+    <p class="text-muted mb-3" style="font-size:0.87rem">Connectez-vous pour parier sur {{ participant_name }}.</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-secondary">Connexion</a>
+      <a href="{{ url_for('register') }}" class="btn-primary-tribet" style="padding:7px 16px;font-size:0.85rem">
+        <i class="fa-solid fa-user-plus me-1"></i>S'inscrire
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="mt-4 d-flex gap-2">
+    <a href="{{ url_for('participants') }}" class="btn btn-sm btn-outline-secondary" style="font-size:0.82rem">
+      <i class="fa-solid fa-arrow-left me-1 fa-xs"></i>Tous les participants
+    </a>
+    <a href="{{ url_for('events') }}" class="btn btn-sm btn-outline-secondary" style="font-size:0.82rem">
+      <i class="fa-solid fa-calendar-days me-1 fa-xs"></i>Voir l'événement
+    </a>
+  </div>
+</div>
+{% endblock %}
